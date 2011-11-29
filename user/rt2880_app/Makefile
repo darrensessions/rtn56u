@@ -32,6 +32,7 @@ libusb10-config:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
 	else \
+		autoreconf -i; \
 		./configure --prefix=$(PWD_DIR)/libusb-1.0.6/build --enable-shared --host=mipsel-linux; \
 		rm -f config_done; \
 		touch config_done; \

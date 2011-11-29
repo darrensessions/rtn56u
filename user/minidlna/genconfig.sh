@@ -41,28 +41,28 @@ ${RM} ${CONFIGFILE}
 
 # Detect if there are missing headers
 # NOTE: This check only works with a normal distro
-[ ! -e "/usr/include/sqlite3.h" ] && MISSING="libsqlite3 $MISSING"
-[ ! -e "/usr/include/jpeglib.h" ] && MISSING="libjpeg $MISSING"
-[ ! -e "/usr/include/libexif/exif-loader.h" ] && MISSING="libexif $MISSING"
-[ ! -e "/usr/include/id3tag.h" ] && MISSING="libid3tag $MISSING"
-[ ! -e "/usr/include/ogg/ogg.h" ] && MISSING="libogg $MISSING"
-[ ! -e "/usr/include/vorbis/codec.h" ] && MISSING="libvorbis $MISSING"
-[ ! -e "/usr/include/FLAC/metadata.h" ] && MISSING="libflac $MISSING"
-[ ! -e "/usr/local/include/ffmpeg/avutil.h" -a \
-  ! -e "/usr/local/include/libavutil/avutil.h" -a \
-  ! -e "/usr/local/include/ffmpeg/libavutil/avutil.h" ] && MISSING="libavutil $MISSING"
-[ ! -e "/usr/local/include/ffmpeg/avformat.h" -a \
-  ! -e "/usr/local/include/libavformat/avformat.h" -a \
-  ! -e "/usr/local/include/ffmpeg/libavformat/avformat.h" ] && MISSING="libavformat $MISSING"
-[ ! -e "/usr/local/include/ffmpeg/avcodec.h" -a \
-  ! -e "/usr/local/include/libavcodec/avcodec.h" -a \
-  ! -e "/usr/local/include/ffmpeg/libavcodec/avcodec.h" ] && MISSING="libavcodec $MISSING"
-if [ -n "$MISSING" ]; then
-	echo -e "\nERROR!  Cannot continue."
-	echo -e "The following required libraries are either missing, or are missing development headers:\n"
-	echo -e "$MISSING\n"
-	exit 1
-fi
+#[ ! -e "/usr/include/sqlite3.h" ] && MISSING="libsqlite3 $MISSING"
+#[ ! -e "/usr/include/jpeglib.h" ] && MISSING="libjpeg $MISSING"
+#[ ! -e "/usr/include/libexif/exif-loader.h" ] && MISSING="libexif $MISSING"
+#[ ! -e "/usr/include/id3tag.h" ] && MISSING="libid3tag $MISSING"
+#[ ! -e "/usr/include/ogg/ogg.h" ] && MISSING="libogg $MISSING"
+#[ ! -e "/usr/include/vorbis/codec.h" ] && MISSING="libvorbis $MISSING"
+#[ ! -e "/usr/include/FLAC/metadata.h" ] && MISSING="libflac $MISSING"
+#[ ! -e "/usr/local/include/ffmpeg/avutil.h" -a \
+#  ! -e "/usr/local/include/libavutil/avutil.h" -a \
+#  ! -e "/usr/local/include/ffmpeg/libavutil/avutil.h" ] && MISSING="libavutil $MISSING"
+#[ ! -e "/usr/local/include/ffmpeg/avformat.h" -a \
+#  ! -e "/usr/local/include/libavformat/avformat.h" -a \
+#  ! -e "/usr/local/include/ffmpeg/libavformat/avformat.h" ] && MISSING="libavformat $MISSING"
+#[ ! -e "/usr/local/include/ffmpeg/avcodec.h" -a \
+#  ! -e "/usr/local/include/libavcodec/avcodec.h" -a \
+#  ! -e "/usr/local/include/ffmpeg/libavcodec/avcodec.h" ] && MISSING="libavcodec $MISSING"
+#if [ -n "$MISSING" ]; then
+#	echo -e "\nERROR!  Cannot continue."
+#	echo -e "The following required libraries are either missing, or are missing development headers:\n"
+#	echo -e "$MISSING\n"
+#	exit 1
+#fi
 
 echo "/* MiniDLNA Project" >> ${CONFIGFILE}
 echo " * http://sourceforge.net/projects/minidlna/" >> ${CONFIGFILE}
@@ -163,11 +163,11 @@ echo "#define OS_URL			\"${OS_URL}\"" >> ${CONFIGFILE}
 echo "" >> ${CONFIGFILE}
 
 echo "/* full path of the file database */" >> ${CONFIGFILE}
-echo "#define DEFAULT_DB_PATH		\"${DB_PATH}\"" >> ${CONFIGFILE}
+echo "#define DEFAULT_DB_PATH		\"/tmp/harddisk/part0/.dms\"" >> ${CONFIGFILE}
 echo "" >> ${CONFIGFILE}
 
 echo "/* full path of the log directory */" >> ${CONFIGFILE}
-echo "#define DEFAULT_LOG_PATH	\"${LOG_PATH}\"" >> ${CONFIGFILE}
+echo "#define DEFAULT_LOG_PATH	\"/tmp/harddisk/part0/.dms\"" >> ${CONFIGFILE}
 echo "" >> ${CONFIGFILE}
 
 echo "/* Comment the following line to use home made daemonize() func instead" >> ${CONFIGFILE}
@@ -176,11 +176,11 @@ echo "#define USE_DAEMON" >> ${CONFIGFILE}
 echo "" >> ${CONFIGFILE}
 
 echo "/* Enable if the system inotify.h exists.  Otherwise our own inotify.h will be used. */" >> ${CONFIGFILE}
-if [ -f /usr/include/sys/inotify.h ]; then
-echo "#define HAVE_INOTIFY_H" >> ${CONFIGFILE}
-else
+#if [ -f /usr/include/sys/inotify.h ]; then
+#echo "#define HAVE_INOTIFY_H" >> ${CONFIGFILE}
+#else
 echo "/*#define HAVE_INOTIFY_H*/" >> ${CONFIGFILE}
-fi
+#fi
 echo "" >> ${CONFIGFILE}
 
 echo "/* Enable if the system iconv.h exists.  ID3 tag reading in various character sets will not work properly otherwise. */" >> ${CONFIGFILE}
@@ -193,11 +193,11 @@ fi
 echo "" >> ${CONFIGFILE}
 
 echo "/* Enable if the system libintl.h exists for NLS support. */" >> ${CONFIGFILE}
-if [ -f /usr/include/libintl.h ]; then
-echo "#define ENABLE_NLS" >> ${CONFIGFILE}
-else
+#if [ -f /usr/include/libintl.h ]; then
+#echo "#define ENABLE_NLS" >> ${CONFIGFILE}
+#else
 echo "/*#define ENABLE_NLS*/" >> ${CONFIGFILE}
-fi
+#fi
 echo "" >> ${CONFIGFILE}
 
 echo "/* Enable NETGEAR-specific tweaks. */" >> ${CONFIGFILE}

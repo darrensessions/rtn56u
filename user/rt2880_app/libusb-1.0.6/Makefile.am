@@ -11,6 +11,14 @@ endif
 pkgconfigdir=$(libdir)/pkgconfig
 pkgconfig_DATA=libusb-1.0.pc
 
+romfs: all
+	cp -f libusb/.libs/libusb-1.0.so.0.0.0 .
+	ln -sf libusb-1.0.so.0.0.0 libusb-1.0.so.0
+	ln -sf libusb-1.0.so.0.0.0 libusb-1.0.so
+	$(ROMFSINST) /lib/libusb-1.0.so.0.0.0
+	$(ROMFSINST) /lib/libusb-1.0.so.0
+	$(ROMFSINST) /lib/libusb-1.0.so
+
 .PHONY: ChangeLog dist-up
 ChangeLog:
 	git --git-dir $(top_srcdir)/.git log > ChangeLog || touch ChangeLog
