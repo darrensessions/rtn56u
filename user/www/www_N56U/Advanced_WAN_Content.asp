@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
@@ -549,6 +549,28 @@ function ISPSelection(isp){
 		$("clone_mac_x").style.display = "";*/
 		document.form.vlan_isp.value = "singtel_others";
 	}
+        else if(isp == "bell_aliant"){
+                $("wan_stb_x").style.display = "none";
+                $("wan_iptv_x").style.display = "none";
+                $("wan_voip_x").style.display = "none";
+                $("wan_internet_x").style.display = "none";
+                $("wan_iptv_port4_x").style.display = "none";
+                $("wan_voip_port3_x").style.display = "none";
+                $("hostname_x").style.display = "none";
+                /*$("clone_mac_x").style.display = "";*/
+                document.form.vlan_isp.value = "bell_aliant";
+        }
+        else if(isp == "bell_aliant_passthrough"){
+                $("wan_stb_x").style.display = "none";
+                $("wan_iptv_x").style.display = "none";
+                $("wan_voip_x").style.display = "none";
+                $("wan_internet_x").style.display = "none";
+                $("wan_iptv_port4_x").style.display = "none";
+                $("wan_voip_port3_x").style.display = "none";
+                $("hostname_x").style.display = "none";
+                $("clone_mac_x").style.display = "none";
+                document.form.vlan_isp.value = "bell_aliant_passthrough";
+        }
 	else if(isp == "manual"){
 		$("wan_stb_x").style.display = "none";
 		$("wan_iptv_x").style.display = "";
@@ -812,6 +834,8 @@ function ISPSelection(isp){
   	<td>
 		<select name="selectedISP" class="input" onChange="ISPSelection(this.value)">
 			<option value="none" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "none", "selected"); %>>None</option>
+			<option value="bell_aliant" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "bell_aliant", "selected"); %>>Bell Aliant</option>
+			<option value="bell_aliant_passthrough" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "bell_aliant_passthrough", "selected"); %>>Bell Aliant - Passthrough</option>
 			<!--option value="russia" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "russia", "selected"); %>>Russia</option-->
 			<option value="unifi_home" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "unifi_home", "selected"); %>>Unifi-Home</option>
 			<option value="unifi_biz" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "unifi_biz", "selected"); %>>Unifi-Business</option>

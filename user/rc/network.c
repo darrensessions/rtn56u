@@ -541,8 +541,8 @@ vconfig()
 			&& !get_usb_modem_state()
 #endif
 			)
-	{
-		stbport = atoi(nvram_safe_get("wan_stb_x"));
+	{	
+	stbport = atoi(nvram_safe_get("wan_stb_x"));
 
 		if (stbport < 0 || stbport > 6)
 			stbport = 0;
@@ -564,7 +564,35 @@ vconfig()
 			sprintf(tmp, "8367m 29 %d", voip_port);	
 			system(tmp);	
 
-			if(!strncmp(nvram_safe_get("vlan_isp"), "unifi", 5))/* Added for Unifi. Cherry Cho modified in 2011/6/28.*/
+			if(!strncmp(nvram_safe_get("vlan_isp"), "bell_aliant", 11))
+			{
+			  if (strstr(nvram_safe_get("vlan_isp"), "passthrough"))
+			  {
+			    system("8367m 38 3");/* Internet: P0  VoIP: P1 */
+			    /* Dummy */
+			    system("8367m 36 1");
+			    system("8367m 37 0");
+			    system("8367m 39 51118876");
+			    /* Internet */
+			    system("8367m 36 35");
+			    system("8367m 37 0");
+			    system("8367m 39 18");//Internet Port: P1 tag
+			  }
+			  else
+			  {
+			    system("8367m 38 1");/* IPTV: P0 */
+			    /* Internet */
+			    system("8367m 36 35");
+			    system("8367m 37 0");
+			    system("8367m 39 51249950");
+			  }
+
+			  /* IPTV */
+			  system("8367m 36 34");
+			  system("8367m 37 4");
+			  system("8367m 39 65553");
+			}
+			else if(!strncmp(nvram_safe_get("vlan_isp"), "unifi", 5))/* Added for Unifi. Cherry Cho modified in 2011/6/28.*/
 			{
 				if(strstr(nvram_safe_get("vlan_isp"), "home"))
 				{					
