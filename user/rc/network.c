@@ -2131,6 +2131,8 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	char *wan_proto, *gateway;
 
+	logmessage("RT-N56U", "wan up");	// tmp test
+	
 	/* Figure out nvram variable name prefix for this i/f */
 	if (wan_prefix(wan_ifname, prefix) < 0)
 	{
@@ -2401,7 +2403,6 @@ Speedtest_Init_failed_wan_up:
 
 	stop_ntpc();
 	start_ntpc();
-
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	if (nvram_match("wan0_proto", "dhcp"))	// 0712 ASUS
 	{
@@ -2548,7 +2549,6 @@ lan_up_ex(char *lan_ifname)
 		fprintf(fp, "nameserver %s\n", word);
 	}
 	fclose(fp);
-
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	if (!pids("detectWan"))
 	{
@@ -2556,7 +2556,6 @@ lan_up_ex(char *lan_ifname)
 		system("detectWan &");
 	}
 #endif
-
 	/* Sync time */
 	stop_ntpc();
 	start_ntpc();
