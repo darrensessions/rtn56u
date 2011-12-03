@@ -1443,7 +1443,6 @@ void watchdog(void)
 		stop_logger();
 		stop_upnp();	// it may cause upnp cannot run
 		stop_dhcpd();
-		stop_dns();
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 		stop_pspfix();
 #endif

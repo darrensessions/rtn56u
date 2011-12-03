@@ -893,7 +893,7 @@ usb_dbg("service_handle: End to restart_wan_line.\n");
 		else if (strcmp(entry->d_name, "restart_dns") == 0)
 		{
 			dbg("rc restarting DNS.\n");
-			restart_dns();
+			restart_dhcpd();
 		}
 		else if (strcmp(entry->d_name, "restart_dhcpd") == 0)
 		{
@@ -2142,7 +2142,7 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "restart_dns"))
 	{
 		dbg("rc restart_dns\n");
-		restart_dns();
+		restart_dhcpd();
 		
 		return 0;
 	}
