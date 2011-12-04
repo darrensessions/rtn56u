@@ -54,7 +54,7 @@ function applyRule(){
 }
 
 function validForm(){
-	var re = new RegExp("[^a-zA-Z0-9-]+", "gi");
+	var re = new RegExp("[^a-zA-Z0-9-.]+", "gi");
 	if(re.test(document.form.lan_domain.value)){
 		alert("<#JS_validchar#>");
     document.form.lan_domain.focus();
