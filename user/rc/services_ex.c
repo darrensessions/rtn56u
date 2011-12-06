@@ -304,9 +304,7 @@ int
 start_dhcpd(void)
 {
 	FILE *fp;
-	char *slease = "/tmp/udhcpd-br0.sleases";
 	char word[256], *next;
-//	int auto_dns = 0;
         char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
         char *start, *end, *ipaddr, *mask;
 
@@ -315,11 +313,11 @@ start_dhcpd(void)
 	if (	nvram_match("sw_mode_ex", "3") ||
 		((nvram_match("sw_mode_ex", "1") || nvram_match("sw_mode_ex", "4")) && !nvram_match("lan_proto", "dhcp")))
 	{
-		dbg("skip running udhcpd...\n");
+		dbg("skip running dnsmasq...\n");
 		return 0;
 	}
 	else
-		dbg("starting udhcpd...\n");
+		dbg("starting dnsmasq...\n");
 
 	/* chk dhcp range */
         memset(dhcp_start, 0, 16);
@@ -351,73 +349,85 @@ start_dhcpd(void)
 		//nvram_safe_get("lan_lease"));
 		nvram_safe_get("dhcp_lease"));
 
-	if (!(fp = fopen("/tmp/udhcpd-br0.leases", "a"))) {
-		perror("/tmp/udhcpd-br0.leases");
+	// if user want to set dns server by himself
+        if (nvram_match("wan0_proto", "static") || !nvram_match("wan0_dnsenable_x", "1"))
+	  {
+	    /* Write resolv.conf with upstream nameservers */
+	    if (!(fp = fopen("/tmp/resolv.conf", "w")))
+	      {
+		perror("/tmp/resolv.conf");
 		return errno;
-	}
-	fclose(fp);
+	      }
+
+	    if (!nvram_match("wan_dns1_x", ""))
+	      fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns1_x"));
+	    if (!nvram_match("wan_dns2_x", ""))
+	      fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns2_x"));
+	    fclose(fp);
+	  }
+
+        if (!(fp = fopen("/tmp/hosts", "w")))
+	  {
+	    perror("/tmp/hosts");
+	    return errno;
+	  }
+
+        fprintf(fp, "127.0.0.1 localhost.localdomain localhost\n");
+        fprintf(fp, "%s my.router\n", nvram_safe_get("lan_ipaddr"));
+        fprintf(fp, "%s my.%s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("productid"));
+        fprintf(fp, "%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("productid"));
+
+        if (strcmp(nvram_safe_get("productid"), nvram_safe_get("computer_name")) && is_valid_hostname(nvram_safe_get("computer_name")))
+	  fprintf(fp, "%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("computer_name"));
+
+        if (!nvram_match("lan_hostname", ""))
+	  {
+	    fprintf(fp, "%s %s.%s %s\n", nvram_safe_get("lan_ipaddr"),
+		    nvram_safe_get("lan_hostname"),
+		    nvram_safe_get("lan_domain"),
+		    nvram_safe_get("lan_hostname"));
+	  }
+
+        fclose(fp);
 
 	// Write configuration file based on current information
-	if (!(fp = fopen("/tmp/udhcpd.conf", "w"))) {
-		perror("/tmp/udhcpd.conf");
+	if (!(fp = fopen("/tmp/dnsmasq.conf", "w"))) {
+		perror("/tmp/dnsmasq.conf");
 		return errno;
 	}
-	
-	//fprintf(fp, "pidfile /var/run/udhcpd-br0.pid\n");
+
+	fprintf(fp, "resolv-file=/tmp/resolv.conf\n");
+	fprintf(fp, "addn-hosts=/tmp/hosts.conf\n");
+	fprintf(fp, "interface=br0\n");
+
+        if (!nvram_match("lan_domain", ""))
+	  fprintf(fp, "domain=%s\n", nvram_safe_get("lan_domain"));
+
 	fprintf(fp, "start %s\n", nvram_safe_get("dhcp_start"));
 	fprintf(fp, "end %s\n", nvram_safe_get("dhcp_end"));
-	//fprintf(fp, "interface %s\n", nvram_safe_get("lan_ifname"));
-	fprintf(fp, "interface br0\n");
-	fprintf(fp, "remaining yes\n");
-	fprintf(fp, "lease_file /tmp/udhcpd-br0.leases\n");
-	fprintf(fp, "option subnet %s\n", nvram_safe_get("lan_netmask"));
 	
 	if (!nvram_match("dhcp_gateway_x", ""))
-		fprintf(fp, "option router %s\n", nvram_safe_get("dhcp_gateway_x"));	
-	else	
-		fprintf(fp, "option router %s\n", nvram_safe_get("lan_ipaddr"));	
+		fprintf(fp, "dhcp-option=3,%s\n", nvram_safe_get("dhcp_gateway_x"));	
 
 	if (!nvram_match("dhcp_dns1_x", ""))
 	{
-		fprintf(fp, "option dns %s\n", nvram_safe_get("dhcp_dns1_x"));
+		fprintf(fp, "dhcp-option=6,%s\n", nvram_safe_get("dhcp_dns1_x"));
 		logmessage("dhcpd", "add option dns: %s", nvram_safe_get("dhcp_dns1_x"));
 	}
-	fprintf(fp, "option dns %s\n", nvram_safe_get("lan_ipaddr"));
-	logmessage("dhcpd", "add option dns: %s", nvram_safe_get("lan_ipaddr"));
-#if 0
-        if (!nvram_match("wan0_proto", "static") && nvram_match("wan0_dnsenable_x", "1"))
-	{
-		foreach(word, (strlen(nvram_safe_get("wan0_dns")) ? nvram_safe_get("wan0_dns") : nvram_safe_get("wanx_dns")), next)
-		{
-			auto_dns++;
-			fprintf(fp, "option dns %s\n", word);
-			logmessage("dhcpd", "add option dns: %s", word);
-		}
 
-		if (!auto_dns && (nvram_match("dhcp_dns1_x", "") || !nvram_match("dhcp_dns1_x", "8.8.8.8")))
-		{
-			fprintf(fp, "option dns 8.8.8.8\n");
-			logmessage("dhcpd", "add option dns: %s", "8.8.8.8");
-		}
-	}
-#endif
-	fprintf(fp, "option lease %s\n", nvram_safe_get("dhcp_lease"));
-
-	if (!nvram_match("dhcp_wins_x", ""))		
-		fprintf(fp, "option wins %s\n", nvram_safe_get("dhcp_wins_x"));		
-	if (!nvram_match("lan_domain", ""))
-		fprintf(fp, "option domain %s\n", nvram_safe_get("lan_domain"));
-	fclose(fp);
+	if (!nvram_match("dhcp_wins_x", ""))
+	  {
+	    fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("dhcp_wins_x"));
+	  }
 
 	if (nvram_match("dhcp_static_x","1"))
 	{	
-		write_static_leases(slease);
-		doSystem("/usr/sbin/udhcpd /tmp/udhcpd.conf /tmp/udhcpd-br0.sleases");
+		write_static_leases(fp);
 	}
-	else
-	{
-		doSystem("/usr/sbin/udhcpd /tmp/udhcpd.conf");
-	}
+
+	fclose(fp);
+
+	doSystem("/usr/sbin/dnsmasq -C /tmp/dnsmasq.conf");
 
 	return 0;
 }
@@ -427,16 +437,16 @@ stop_dhcpd(void)
 {
 	int delay_count = 10;
 
-	if (pids("udhcpd"))
+	if (pids("dnsmasq"))
 	{
-		doSystem("killall -%d udhcpd", SIGUSR1);
+		doSystem("killall -%d dnsmasq", SIGUSR1);
 		sleep(1);
-		doSystem("killall udhcpd");
+		doSystem("killall dnsmasq");
 	}
 	else
 		return;
 
-	while (pids("udhcpd") && (delay_count-- > 0))
+	while (pids("dnsmasq") && (delay_count-- > 0))
 		sleep(1);
 }
 
@@ -444,7 +454,7 @@ stop_dhcpd(void)
 int
 restart_dhcpd()
 {
-	dbg("restart udhcpd\n");	//tmp test
+	dbg("restart dnsmasq\n");	//tmp test
 
 	stop_dhcpd();
 	sleep(1);
@@ -455,147 +465,6 @@ restart_dhcpd()
 // dns patch check 0524 end
 
 extern int valid_url_filter_time();
-
-int
-start_dns(void)
-{
-	FILE *fp;
-
-	if (pids("dproxy"))
-		return restart_dns();
-
-	if (nvram_match("router_disable", "1"))
-		return 0;
-
-	/* Create resolv.conf with empty nameserver list */
-	if (!(fp = fopen("/tmp/resolv.conf", "r")))
-	{
-		if (!(fp = fopen("/tmp/resolv.conf", "w"))) 
-		{
-			perror("/tmp/resolv.conf");
-			return errno;
-		}
-		else fclose(fp);
-	}
-	else fclose(fp);
-
-	if (!(fp = fopen("/tmp/dproxy.conf", "w")))
-	{
-		perror("/tmp/dproxy.conf");
-		return errno;
-	}
-
-	fprintf(fp, "name_server=\n");
-	fprintf(fp, "ppp_detect=0\n");
-	fprintf(fp, "purge_time=1200\n");
-//	fprintf(fp, "deny_file=/tmp/dproxy.deny\n");
-	fprintf(fp, "deny_file=\n");
-	fprintf(fp, "cache_file=/tmp/dproxy.cache\n");
-	fprintf(fp, "hosts_file=/tmp/hosts\n");
-	fprintf(fp, "dhcp_lease_file=\n");
-	fprintf(fp, "ppp_dev=/var/run/ppp0.pid\n");
-	fprintf(fp, "debug_file=/tmp/dproxy.log\n");
-	fclose(fp);
-
-	// if user want to set dns server by himself
-	if (nvram_match("wan0_proto", "static") || !nvram_match("wan0_dnsenable_x", "1"))
-	{
-		/* Write resolv.conf with upstream nameservers */
-		if (!(fp = fopen("/tmp/resolv.conf", "w")))
-		{
-			perror("/tmp/resolv.conf");
-			return errno;
-		}
-	
-		if (!nvram_match("wan_dns1_x", ""))
-			fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns1_x"));		
-		if (!nvram_match("wan_dns2_x", ""))
-			fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns2_x"));
-		fclose(fp);
-	}
-
-/*
-	active = timecheck_item(nvram_safe_get("url_date_x"), nvram_safe_get("url_time_x"));
-	active1 = timecheck_item(nvram_safe_get("url_date_x"), nvram_safe_get("url_time_x_1"));
-	if (valid_url_filter_time() && (active || active1))
-	{
-		if (!(fp = fopen("/tmp/dproxy.deny", "w")))
-		{
-			perror("/tmp/dproxy.deny");
-			return errno;
-		}
-
-		for (i=0; i<atoi(nvram_safe_get("url_num_x")); i++)
-		{
-			sprintf(word, "url_keyword_x%d", i);
-			fprintf(fp, "%s\n", nvram_safe_get(word));
-		}
-	
-		fclose(fp);	
-	}
-	else
-		unlink("/tmp/dproxy.deny");
-*/
-	if (!(fp = fopen("/tmp/hosts", "w")))
-	{
-		perror("/tmp/hosts");
-		return errno;
-	}
-
-	fprintf(fp, "127.0.0.1 localhost.localdomain localhost\n");
-	fprintf(fp, "%s	my.router\n", nvram_safe_get("lan_ipaddr"));
-	fprintf(fp, "%s	my.%s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("productid"));
-	fprintf(fp, "%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("productid"));
-
-	if (strcmp(nvram_safe_get("productid"), nvram_safe_get("computer_name")) && is_valid_hostname(nvram_safe_get("computer_name")))
-		fprintf(fp, "%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("computer_name"));
-
-	if (!nvram_match("lan_hostname", ""))
-	{
-		fprintf(fp, "%s %s.%s %s\n", nvram_safe_get("lan_ipaddr"),
-					nvram_safe_get("lan_hostname"),
-					nvram_safe_get("lan_domain"),
-					nvram_safe_get("lan_hostname"));
-	}	
-
-	fclose(fp);	
-		
-	return system("dproxy -c /tmp/dproxy.conf");
-}	
-
-void
-stop_dns(void)
-{
-	dbg("stop_dns()\n");
-
-	int delay_count = 10;
-
-	if (pids("dproxy"))
-		system("killall -SIGKILL dproxy");
-	else
-		return;
-
-	while (pids("dproxy") && (delay_count-- > 0))
-		sleep(1);
-
-//	unlink("/tmp/dproxy.deny");
-}
-
-int 
-restart_dns()
-{
-	FILE *fp = NULL;
-
-	if (pids("dproxy") && (fp = fopen("/tmp/dproxy.conf", "r")))
-	{
-		fclose(fp);
-		return system("killall -SIGHUP dproxy");
-	}
-
-	stop_dns();
-
-	return start_dns();
-}
 
 extern int ddns_timer;
 
@@ -621,8 +490,6 @@ ddns_updated_main(int argc, char *argv[])
 	nvram_set("ddns_server_x_old", nvram_safe_get("ddns_server_x"));
 	nvram_set("ddns_hostname_x_old", nvram_safe_get("ddns_hostname_x"));
 	nvram_commit_safe();
-
-	unlink("/tmp/dproxy.cache");
 
 	logmessage("ddns", "ddns update ok");
 
@@ -4026,10 +3893,7 @@ stop_service_main(int type)
 	{
 		stop_usb();
 		stop_upnp();
-		stop_dns();
 		stop_httpd();
-		if (pids("udhcpc"))
-			system("killall -SIGTERM udhcpc");
 	}
 	else
 	{

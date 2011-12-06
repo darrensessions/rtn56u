@@ -478,7 +478,6 @@ start_services(void)
 
         start_telnetd();
 	start_klogd();
-	start_dns();
 	start_8021x();
 	start_8021x_rt();
 	start_infosvr();
