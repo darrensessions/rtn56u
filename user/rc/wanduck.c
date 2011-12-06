@@ -450,7 +450,7 @@ csprintf("**** clean ip_conntrack %d time. ****\n", i+1);
 	track_set("100");
 #endif
 //	system("killall dproxy");
-//	system("rm -f /tmp/dproxy.cache");
+	system("rm -f /tmp/dproxy.cache");
 //	system("dproxy -c /tmp/dproxy.conf &");
 }
 

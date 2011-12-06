@@ -1983,7 +1983,7 @@ add_dns(const char *wan_ifname)
 
 	/* notify dns server */
 	snprintf(tmp, sizeof(tmp), "-%d", SIGHUP);
-	eval("killall", tmp, "dnsmasq");
+	eval("killall", tmp, "dproxy");
 	
 	return 0;
 }
@@ -2064,7 +2064,7 @@ del_dns(const char *wan_ifname)
 	
 	/* notify dns server */
 	snprintf(tmp, sizeof(tmp), "-%d", SIGHUP);
-	eval("killall", tmp, "dnsmasq");
+	eval("killall", tmp, "dproxy");
 	
 	return 0;
 }
@@ -2090,7 +2090,7 @@ update_resolvconf(void)
 
 	fclose(fp);
 
-	restart_dhcpd();
+	restart_dns();
 	
 	return 0;
 }

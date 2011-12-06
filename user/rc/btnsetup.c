@@ -15,7 +15,6 @@
  * MA 02111-1307 USA
  */
 #ifdef BTN_SETUP
-
 // * Man in Middle Attack
 //
 //             -Attacker<-
@@ -274,19 +273,33 @@ int
 start_sdhcpd(void)
 {
 	FILE *fp;
-	char *dhcpd_argv[] = {"dnsmasq", "-C", "/tmp/dnsmasq.conf", NULL, NULL};
+	char *dhcpd_argv[] = {"udhcpd", "/tmp/udhcpd.conf", NULL, NULL};
+	char *slease = "/tmp/udhcpd-br0.sleases";
 	pid_t pid;
 
 	if (nvram_match("lan_proto", "dhcp")) return 0;
 
+	if (!(fp = fopen("/tmp/udhcpd-br0.leases", "a"))) {
+		perror("/tmp/udhcpd-br0.leases");
+		return errno;
+	}
+	fclose(fp);
+
 	/* Write configuration file based on current information */
-	if (!(fp = fopen("/tmp/dnsmasq.conf", "w"))) {
-		perror("/tmp/dnsmasq.conf");
+	if (!(fp = fopen("/tmp/udhcpd.conf", "w"))) {
+		perror("/tmp/udhcpd.conf");
 		return errno;
 	}
 	
-	fprintf(fp, "interface=%s\n", nvram_safe_get("lan_ifname"));
-	fprintf(fp, "dhcp-range=%s,%s\n", nvram_safe_get("dhcp_start"), nvram_safe_get("dhcp_end"));
+	fprintf(fp, "pidfile /var/run/udhcpd-br0.pid\n");
+	fprintf(fp, "start %s\n", nvram_safe_get("dhcp_start"));
+	fprintf(fp, "end %s\n", nvram_safe_get("dhcp_end"));
+	fprintf(fp, "interface %s\n", nvram_safe_get("lan_ifname"));
+	fprintf(fp, "remaining yes\n");
+	fprintf(fp, "lease_file /tmp/udhcpd-br0.leases\n");
+	fprintf(fp, "option subnet %s\n", nvram_safe_get("lan_netmask"));
+	fprintf(fp, "option router %s\n", nvram_safe_get("lan_ipaddr"));
+	fprintf(fp, "option lease 3600\n");
 	fclose(fp);
 	
 	_eval(dhcpd_argv, NULL, 0, &pid);

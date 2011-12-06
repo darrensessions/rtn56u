@@ -664,10 +664,15 @@ void convert_routes(void)
 	nvram_set("wan_route", mroutes);	// oleg patch
 }
 
-void write_static_leases(FILE *fp)
+void write_static_leases(char *file)
 {
+	FILE *fp;
 	char *ip, *mac;
 	int i;
+
+	fp=fopen(file, "w");
+
+	if (fp==NULL) return;
 	
 	g_buf_init();
 			
@@ -675,8 +680,9 @@ void write_static_leases(FILE *fp)
 	{
 		ip = general_conv("dhcp_staticip_x", i);
 		mac = general_conv("dhcp_staticmac_x", i);
-		fprintf(fp, "dhcp-host=%s,%s\n", mac, ip);
+		fprintf(fp, "%s,%s\r\n", ip, mac);
 	}
+	fclose(fp);
 }
 
 #ifndef NOIPTABLES
