@@ -293,8 +293,8 @@ restart_rstats()
 int 
 start_upnp()
 {
-	char cmdbuf[64];
 	char *wan_proto;
+	FILE *fp;
 
 #ifdef WIFI_LOGO
 	return 0;
@@ -304,23 +304,25 @@ start_upnp()
 		return 0;
 
 	system("route add -net 239.0.0.0 netmask 255.0.0.0 dev br0");
-	memset(cmdbuf, 0, sizeof(cmdbuf));
-	sprintf(cmdbuf, "upnp_xml.sh %s %s", nvram_safe_get("lan_ipaddr_t"), nvram_safe_get("br0hexaddr"));
-	system(cmdbuf);
+
+	if (!(fp = fopen("/tmp/miniupnpd.conf", "w")))
+	{
+	  perror("/tmp/miniupnpd.conf");
+	  return errno;
+	}
 
 	wan_proto = nvram_safe_get("wan_proto");
 #ifdef RTCONFIG_USB_MODEM
 	if(get_usb_modem_state()){
 #ifdef RTCONFIG_USB_MODEM_WIMAX
 		if(nvram_match("modem_enable", "4")){
-			char cmd[64];
-			memset(cmd, 0, 64);
-			sprintf(cmd, "upnpd -f %s br0 &", WIMAX_INTERFACE);
-			system(cmd);
+		  fprintf(fp, "ext_ifname=%s\n", WIMAX_INTERFACE);
 		}
 		else
 #endif
-			system("upnpd -f ppp0 br0 &");
+		  {
+		    fprintf(fp, "ext_ifname=ppp0\n");
+		  }
 	}
 	else
 #endif
@@ -328,12 +330,26 @@ start_upnp()
 	    strcmp(wan_proto, "pptp") == 0 || 
 	    strcmp(wan_proto, "l2tp") == 0)
 	{
-		system("upnpd -f ppp0 br0 &");
+	  fprintf(fp, "ext_ifname=ppp0\n");
 	}
 	else
 	{
-		system("upnpd -f eth3 br0 &");
+	  fprintf(fp, "ext_ifname=eth3\n");
 	}
+
+	fprintf(fp, "port=0\n");
+	fprintf(fp, "upnp_forward_chain=FORWARD\n");
+	fprintf(fp, "upnp_nat_chain=VSERVER\n");
+	fprintf(fp, "listening_ip=%s\n", nvram_safe_get("lan_ipaddr"));
+	fprintf(fp, "uuid=b79c8ac2-6177-6502-df80-2f6132e649e\n");
+	fprintf(fp, "serial=B79C8AC2\n");
+	fprintf(fp, "model_number=RT-N56U\n");
+	fprintf(fp, "enable_upnp=yes\n");
+	fprintf(fp, "enable_natpmp=yes\n");
+
+	fclose(fp);
+
+	system("miniupnpd -f /tmp/miniupnpd.conf");
 
 	nvram_set("upnp_started", "1");
 
@@ -343,9 +359,9 @@ start_upnp()
 void
 stop_upnp(void)
 {
-	if (pids("upnpd"))
+	if (pids("miniupnpd"))
 	{
-		kill_pidfile_s("/var/run/upnpd.pid", SIGTERM);
+	  system("killall miniupnpd");
 		sleep(2);
 	}
 }
